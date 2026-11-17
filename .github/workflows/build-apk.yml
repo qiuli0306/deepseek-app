@@ -26,6 +26,12 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Sync web assets
+        run: npx cap sync android
+
+      - name: Accept Android licenses
+        run: yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Copy app icons
         run: |
           set -e
@@ -46,7 +52,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
