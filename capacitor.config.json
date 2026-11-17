@@ -1,0 +1,12 @@
+{
+  "appId": "io.github.qiuli0306.app",
+  "appName": "deepseek",
+  "webDir": "www",
+  "server": {
+    "url": "https://qiuli0306.github.io/deepseek/",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
