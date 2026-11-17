@@ -32,6 +32,13 @@ jobs:
             printf '<!DOCTYPE html><html><head><meta charset="utf-8"><title>deepseek</title></head><body></body></html>' > www/index.html
           fi
 
+      - name: Make android config dirs writable
+        run: |
+          sudo mkdir -p /home/runner/.config/.android /home/runner/.android
+          sudo chown -R "$(id -u)":"$(id -g)" /home/runner/.config /home/runner/.android
+          chmod -R u+rwX /home/runner/.config /home/runner/.android
+          touch /home/runner/.config/.android/_test && echo "writable OK"
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
