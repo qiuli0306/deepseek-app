@@ -23,9 +23,7 @@ jobs:
       - name: Prepare webDir
         run: |
           mkdir -p www
-          if [ ! -f www/index.html ]; then
-            printf '<!DOCTYPE html><html><head><meta charset="utf-8"><title>deepseek</title></head><body></body></html>' > www/index.html
-          fi
+          [ -f www/index.html ] || printf '<!DOCTYPE html><html><body></body></html>' > www/index.html
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -39,22 +37,35 @@ jobs:
       - name: Sync web assets
         run: npx cap sync android
 
-      - name: Inject custom debug signing
+      - name: Create keystore and inject signing
         run: |
+          set -e
           keytool -genkeypair -v -keystore android/app/debug.keystore \
             -storepass android -alias androiddebugkey -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
-          python3 -c "
-import io
-p='android/app/build.gradle'
-s=open(p).read()
-inj='    signingConfigs { debug { storeFile file(\"debug.keystore\"); storePassword \"android\"; keyAlias \"androiddebugkey\"; keyPassword \"android\" } }\n'
-if 'signingConfigs' not in s:
-    s=s.replace('android {','android {'+chr(10)+inj,1)
-open(p,'w').write(s)
-print('injected')
-"
+          python3 - <<'PY'
+          import re
+          p = 'android/app/build.gradle'
+          s = open(p).read()
+          block = '''    signingConfigs {
+              debug {
+                  storeFile file("debug.keystore")
+                  storePassword "android"
+                  keyAlias "androiddebugkey"
+                  keyPassword "android"
+              }
+          }
+          '''
+          if 'signingConfigs' not in s:
+              s = s.replace('android {', 'android {\n' + block, 1)
+              open(p, 'w').write(s)
+              print('INJECTED OK')
+          else:
+              print('ALREADY HAS signingConfigs')
+          PY
+          grep -n "signingConfigs" android/app/build.gradle | head -5
+          ls -l android/app/debug.keystore
 
       - name: Accept Android licenses
         run: yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -63,9 +74,7 @@ print('injected')
         run: |
           set -e
           RES=android/app/src/main/res
-          for d in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
-            mkdir -p $RES/$d
-          done
+          for d in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do mkdir -p $RES/$d; done
           if [ -f icon-512.png ]; then
             cp icon-512.png $RES/mipmap-xxxhdpi/ic_launcher.png
             cp icon-512.png $RES/mipmap-xxhdpi/ic_launcher.png
