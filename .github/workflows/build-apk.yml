@@ -39,6 +39,11 @@ jobs:
       - name: Sync web assets
         run: npx cap sync android
 
+      - name: Prepare keystore dir
+        run: |
+          mkdir -p "$HOME/.config/.android" "$HOME/.android"
+          chmod -R 777 "$HOME/.config" "$HOME/.android"
+
       - name: Accept Android licenses
         run: yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
@@ -62,7 +67,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ANDROID_USER_HOME=$HOME/.android ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
